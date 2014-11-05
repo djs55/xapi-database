@@ -10,7 +10,8 @@ rule token = parse
   | "WHERE"                            { WHERE }
   | "FROM"                             { FROM }
   | "SET"                              { SET }
-  | ['a'-'z']['_''0'-'9''a'-'z']* as x { IDENT x }
+  | "*"                                { STAR }
+  | ['a'-'z''A'-'Z']['_''.''0'-'9''a'-'z''A'-'Z']* as x { IDENT x }
   | '\''([^'\'''\n']|'.')*'\'' as x    { STRING (unquote x) }
   | '"'([^'"''\n']|'.')*'"' as x       { STRING (unquote x) }
   | ','                                { COMMA }

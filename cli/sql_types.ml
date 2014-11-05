@@ -14,3 +14,7 @@ type expression =
 | Select of select
 | Update of update
 with sexp
+
+type result =
+| Rows of string list list
+| Unit

@@ -2,7 +2,7 @@
 open Sql_types
 %}
 %token <string> IDENT STRING
-%token SELECT INSERT UPDATE DELETE WHERE FROM SET COMMA EQ SEMICOLON EOF
+%token SELECT INSERT UPDATE DELETE WHERE FROM SET COMMA EQ STAR SEMICOLON EOF
 %start expression             /* the entry point */
 %type <Sql_types.expression> expression
 %%
@@ -12,7 +12,9 @@ expression:
 ;
 columns:                       { [] }
  | IDENT                       { [ $1 ] }
+ | STAR                        { [ "" ] }
  | IDENT COMMA columns         { $1::$3 }
+ | STAR COMMA columns          { ""::$3 }
 ;
 tables:                        { [] }
  | IDENT                       { [ $1 ] }

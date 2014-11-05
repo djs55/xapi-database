@@ -11,6 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *)
+open Sexplib.Std
 
 type response =
 	| String of string
@@ -28,6 +29,7 @@ end
 
 (** dictionary of regular fields x dictionary of associated set_ref values *)
 type db_record = (string * string) list * (string * (string list)) list 
+with sexp
 
 (** The client interface to the database *)
 module type DB_ACCESS = sig
