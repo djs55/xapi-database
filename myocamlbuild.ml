@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: 65d7a77b5c1d4bf8f38343466e3d9ba9) *)
+(* DO NOT EDIT (digest: f77961f250fcfef18ea980afdca9e9e9) *)
 module OASISGettext = struct
 (* # 22 "src/oasis/OASISGettext.ml" *)
 
@@ -610,7 +610,7 @@ let package_default =
      MyOCamlbuildBase.lib_ocaml = [("xapi-database", ["core"], [])];
      lib_c = [];
      flags = [];
-     includes = []
+     includes = [("cli", ["core"])]
   }
   ;;
 

@@ -1,9 +1,9 @@
 # OASIS_START
-# DO NOT EDIT (digest: a1c15e6dcfc61cce64ca8240e6cae158)
+# DO NOT EDIT (digest: 81af1a46be2c1229fb418c32593ff595)
 version = "1.0"
 description = "Xapi metadata storage layer"
 requires =
-"threads rpclib rpclib.syntax sexplib sexplib.syntax xcp http-svr sexpr"
+"threads rpclib rpclib.syntax sexplib sexplib.syntax xcp sexpr http-svr"
 archive(byte) = "xapi-database.cma"
 archive(byte, plugin) = "xapi-database.cma"
 archive(native) = "xapi-database.cmxa"

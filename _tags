@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: f3d27b40dbdd8179149097b773eab1a4)
+# DO NOT EDIT (digest: 53699457a51b3bb2b1f59c7d855f4947)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -24,4 +24,33 @@ true: annot, bin_annot
 <core/*.ml{,i,y}>: pkg_sexpr
 <core/*.ml{,i,y}>: pkg_threads
 <core/*.ml{,i,y}>: pkg_xcp
+# Executable cli
+<cli/main.{native,byte}>: pkg_http-svr
+<cli/main.{native,byte}>: pkg_lwt
+<cli/main.{native,byte}>: pkg_lwt.unix
+<cli/main.{native,byte}>: pkg_rpclib
+<cli/main.{native,byte}>: pkg_rpclib.syntax
+<cli/main.{native,byte}>: pkg_sexplib
+<cli/main.{native,byte}>: pkg_sexplib.syntax
+<cli/main.{native,byte}>: pkg_sexpr
+<cli/main.{native,byte}>: pkg_threads
+<cli/main.{native,byte}>: pkg_uri
+<cli/main.{native,byte}>: pkg_xcp
+<cli/main.{native,byte}>: pkg_xen-api-client
+<cli/main.{native,byte}>: pkg_xen-api-client.lwt
+<cli/main.{native,byte}>: use_xapi-database
+<cli/*.ml{,i,y}>: pkg_http-svr
+<cli/*.ml{,i,y}>: pkg_lwt
+<cli/*.ml{,i,y}>: pkg_lwt.unix
+<cli/*.ml{,i,y}>: pkg_rpclib
+<cli/*.ml{,i,y}>: pkg_rpclib.syntax
+<cli/*.ml{,i,y}>: pkg_sexplib
+<cli/*.ml{,i,y}>: pkg_sexplib.syntax
+<cli/*.ml{,i,y}>: pkg_sexpr
+<cli/*.ml{,i,y}>: pkg_threads
+<cli/*.ml{,i,y}>: pkg_uri
+<cli/*.ml{,i,y}>: pkg_xcp
+<cli/*.ml{,i,y}>: pkg_xen-api-client
+<cli/*.ml{,i,y}>: pkg_xen-api-client.lwt
+<cli/*.ml{,i,y}>: use_xapi-database
 # OASIS_STOP
