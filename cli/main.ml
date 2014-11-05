@@ -14,5 +14,11 @@ module Remote_db : Db_interface.DB_ACCESS = Db_rpc_client_v1.Make(struct
 end)
 
 let _ =
+(*
   let all = Remote_db.read_refs Db_ref.Remote "VM" in
-  List.iter (fun x -> output_string stdout x; output_string stdout "\n") all
+  List.iter (fun x -> output_string stdout x; output_string stdout "\n") all;
+*)
+  let lexbuf = Lexing.from_channel stdin in
+  let exp = Sql_parser.expression Sql_lexer.token lexbuf in
+  output_string stdout (Sexplib.Sexp.to_string_hum (Sql_types.sexp_of_expression exp));
+  ()
