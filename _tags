@@ -1,0 +1,27 @@
+# OASIS_START
+# DO NOT EDIT (digest: f3d27b40dbdd8179149097b773eab1a4)
+# Ignore VCS directories, you can use the same kind of rule outside
+# OASIS_START/STOP if you want to exclude directories that contains
+# useless stuff for the build process
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Library xapi-database
+"core/xapi-database.cmxs": use_xapi-database
+<core/*.ml{,i,y}>: pkg_http-svr
+<core/*.ml{,i,y}>: pkg_rpclib
+<core/*.ml{,i,y}>: pkg_rpclib.syntax
+<core/*.ml{,i,y}>: pkg_sexplib
+<core/*.ml{,i,y}>: pkg_sexplib.syntax
+<core/*.ml{,i,y}>: pkg_sexpr
+<core/*.ml{,i,y}>: pkg_threads
+<core/*.ml{,i,y}>: pkg_xcp
+# OASIS_STOP
