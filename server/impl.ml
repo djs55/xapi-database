@@ -12,6 +12,28 @@
  * GNU Lesser General Public License for more details.
  *)
 
+module Path = struct
+  type t = string list
+
+  let _xapi = "xapi"
+
+  let root = [ _xapi ]
+
+  let table tbl =  [ _xapi; tbl ]
+  let obj tbl rf = [ _xapi; tbl; rf ]
+  let field obj tbl rf field = [ _xapi; tbl; rf; field ]
+
+end
+
+open Irmin_unix
+module Git = IrminGit.FS(struct
+  let root = Some "/tmp/db.git"
+  let bare = true
+end)
+
+module DB = Git.Make(IrminKey.SHA1)(IrminContents.String)(IrminTag.String)
+
+
 let initialise () = ()
 
 let get_table_from_ref dbref rf = None

@@ -10,4 +10,7 @@ depends: [
   "ocamlfind"
   "xapi-libs-transitional"
   "sexplib"
+  "xen-api-client"
+  "irmin"
+  "cohttp"
 ]
