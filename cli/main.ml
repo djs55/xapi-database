@@ -52,4 +52,5 @@ let _ =
   output_string stdout (Sexplib.Sexp.to_string_hum (Sql_types.sexp_of_expression exp));
   ()
 *)
+  let query = String.concat " " (List.tl (Array.to_list Sys.argv)) in
   run query
