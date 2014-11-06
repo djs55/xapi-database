@@ -18,3 +18,9 @@ Executable cli
   Path: cli
   MainIs: main.ml
   BuildDepends: xapi-database, uri, lwt, lwt.unix, xen-api-client, xen-api-client.lwt
+
+Executable server
+  CompiledObject: best
+  Path: server
+  MainIs: server.ml
+  BuildDepends: xapi-database, uri, lwt, lwt.unix, cohttp, cohttp.lwt
