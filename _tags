@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 70e086167d0136377a86acdd76c19ffc)
+# DO NOT EDIT (digest: f6652c1f7b6765a9458953cf687d4c33)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -93,4 +93,25 @@ true: annot, bin_annot
 <server/*.ml{,i,y}>: pkg_uri
 <server/*.ml{,i,y}>: pkg_xcp
 <server/*.ml{,i,y}>: use_xapi-database
+# Executable dbconvert
+<utils/dbconvert.{native,byte}>: pkg_http-svr
+<utils/dbconvert.{native,byte}>: pkg_irmin.unix
+<utils/dbconvert.{native,byte}>: pkg_rpclib
+<utils/dbconvert.{native,byte}>: pkg_rpclib.syntax
+<utils/dbconvert.{native,byte}>: pkg_sexplib
+<utils/dbconvert.{native,byte}>: pkg_sexplib.syntax
+<utils/dbconvert.{native,byte}>: pkg_sexpr
+<utils/dbconvert.{native,byte}>: pkg_threads
+<utils/dbconvert.{native,byte}>: pkg_xcp
+<utils/dbconvert.{native,byte}>: use_xapi-database
+<utils/*.ml{,i,y}>: pkg_http-svr
+<utils/*.ml{,i,y}>: pkg_irmin.unix
+<utils/*.ml{,i,y}>: pkg_rpclib
+<utils/*.ml{,i,y}>: pkg_rpclib.syntax
+<utils/*.ml{,i,y}>: pkg_sexplib
+<utils/*.ml{,i,y}>: pkg_sexplib.syntax
+<utils/*.ml{,i,y}>: pkg_sexpr
+<utils/*.ml{,i,y}>: pkg_threads
+<utils/*.ml{,i,y}>: pkg_xcp
+<utils/*.ml{,i,y}>: use_xapi-database
 # OASIS_STOP

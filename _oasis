@@ -24,3 +24,9 @@ Executable server
   Path: server
   MainIs: server.ml
   BuildDepends: xapi-database, uri, lwt, lwt.unix, cohttp, cohttp.lwt, irmin, irmin.backend, irmin.unix, git
+
+Executable dbconvert
+  CompiledObject: best
+  Path: utils
+  MainIs: dbconvert.ml
+  BuildDepends: xapi-database
