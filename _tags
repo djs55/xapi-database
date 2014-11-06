@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: c188f1326640b9d0a0969b34809a6cb1)
+# DO NOT EDIT (digest: 2527e22b5b24cf3ac4f401a89b81e531)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -56,7 +56,11 @@ true: annot, bin_annot
 # Executable server
 <server/server.{native,byte}>: pkg_cohttp
 <server/server.{native,byte}>: pkg_cohttp.lwt
+<server/server.{native,byte}>: pkg_git
 <server/server.{native,byte}>: pkg_http-svr
+<server/server.{native,byte}>: pkg_irmin
+<server/server.{native,byte}>: pkg_irmin.backend
+<server/server.{native,byte}>: pkg_irmin.unix
 <server/server.{native,byte}>: pkg_lwt
 <server/server.{native,byte}>: pkg_lwt.unix
 <server/server.{native,byte}>: pkg_rpclib
@@ -70,7 +74,11 @@ true: annot, bin_annot
 <server/server.{native,byte}>: use_xapi-database
 <server/*.ml{,i,y}>: pkg_cohttp
 <server/*.ml{,i,y}>: pkg_cohttp.lwt
+<server/*.ml{,i,y}>: pkg_git
 <server/*.ml{,i,y}>: pkg_http-svr
+<server/*.ml{,i,y}>: pkg_irmin
+<server/*.ml{,i,y}>: pkg_irmin.backend
+<server/*.ml{,i,y}>: pkg_irmin.unix
 <server/*.ml{,i,y}>: pkg_lwt
 <server/*.ml{,i,y}>: pkg_lwt.unix
 <server/*.ml{,i,y}>: pkg_rpclib
