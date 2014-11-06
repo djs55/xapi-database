@@ -1,5 +1,5 @@
 
-let uri = ref (Uri.make ~scheme:"http" ~userinfo:"root:xenroot" ~host:"socket=/var/lib/xcp/xapi" ~path:"/remote_db_access" ())
+let uri = ref (Uri.make ~scheme:"http" ~userinfo:"root:xenroot" ~host:"socket=/tmp/foo" ~path:"/remote_db_access" ())
 
 module Http_client = XenAPI.Xen_api.Make(Xen_api_lwt_unix.Lwt_unix_IO)
 
