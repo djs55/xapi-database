@@ -16,7 +16,8 @@ let failure exn_name xml =
 
 module Make(DBCache: Db_interface.DB_ACCESS) = struct
 		
-	let rpc t xml =
+	let xmlrpc xml =
+		let t = Db_ref.Remote in
 		let fn_name, args =
 			match (XMLRPC.From.array (fun x->x) xml) with
 					[fn_name; _; args] ->
@@ -82,4 +83,5 @@ module Make(DBCache: Db_interface.DB_ACCESS) = struct
 			| Too_many_values (s1,s2,s3) ->
 				failure "too_many_values" (marshall_3strings (s1,s2,s3))
 			| e -> raise e
+	let rpc x = Xml.to_string (xmlrpc (Xml.parse_string x))
 end
