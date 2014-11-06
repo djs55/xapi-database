@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: f6ce685e83b60f8f157e6e83615db9ad)
+# DO NOT EDIT (digest: 1443e8b71420a1d67b47dde5ffb77880)
 Db_action_helper
 Db_cache_types
 Db_exn
@@ -22,4 +22,7 @@ Schema
 String_marshall_helper
 String_unmarshall_helper
 Xml_spaces
+XMLRPC
+Xml
+Db_remote_cache_access_v1
 # OASIS_STOP
