@@ -30,6 +30,7 @@ module Path = struct
   let obj tbl rf = [ _xapi; tbl; rf ]
   let field tbl rf field = [ _xapi; tbl; rf; field ]
 
+  let ref_to_table rf = [ _xapi; _ref_to_table; rf ]
 end
 
 let rec mkints first last =
@@ -56,7 +57,7 @@ module To = struct
           let record rf ctime mtime (row: Row.t) acc =
             let preamble =
               [(["__mtime"],Int64.to_string mtime); (["__ctime"],Int64.to_string ctime); (["ref"],rf)] in
-            let index = [ [ Path._xapi; Path._ref_to_table; rf ], name ] in
+            let index = [ Path.ref_to_table rf, name ] in
             let pairs = Row.fold (fun k _ _ v acc ->
               let ty = try (Schema.Table.find k schema_table).Schema.Column.ty with _ -> Schema.Type.String in
               match ty with
@@ -110,6 +111,11 @@ let ls (path: string list) : string list Lwt.t =
   let children = setify (List.map (fun key -> List.hd (remove_prefix path key)) keys) in
   return children
 
+let rm path =
+  store_t >>= fun store ->
+  Store.list store [ path ] >>= fun keys ->
+  Lwt_list.iter_s (Store.remove store) keys
+
 open Db_cache_types
 open Db_exn
 
@@ -117,7 +123,7 @@ module Impl = struct
   let initialise () = ()
 
   let get_table_from_ref dbref rf =
-    Lwt_main.run (read [ Path._xapi; Path._ref_to_table; rf ])
+    Lwt_main.run (read (Path.ref_to_table rf))
 
   let is_valid_ref dbref rf = match get_table_from_ref dbref rf with
     | None -> false
@@ -165,9 +171,11 @@ module Impl = struct
     let where = { table=tbl; return=Db_names.ref; where_field=(Escaping.escape_id ["name"; "label"]); where_value = label } in
     read_field_where dbref where
 
-  let create_row dbref tbl kvpairs rf = ()
+  let delete_row dbref tbl rf =
+    Lwt_main.run (rm (Path.obj tbl rf));
+    Lwt_main.run (rm (Path.ref_to_table rf))
 
-  let delete_row dbref tbl rf = ()
+  let create_row dbref tbl kvpairs rf = ()
 
   let write_field dbref tbl rf fld v = ()
 
