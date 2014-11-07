@@ -43,6 +43,21 @@ let read path =
   store_t >>= fun store ->
   Store.read store path
 
+let rec remove_prefix prefix path = match prefix, path with
+| [], path -> path
+| p :: ps, q :: qs when p = q -> remove_prefix ps qs
+| _, _ -> failwith (Printf.sprintf "%s is not a prefix of %s" (String.concat "/" prefix) (String.concat "/" path))
+
+let union xs x = if not(List.mem x xs) then x :: xs else xs
+
+let setify xs = List.fold_left union [] xs
+
+let ls (path: string list) : string list Lwt.t =
+  store_t >>= fun store ->
+  Store.list store [ path ] >>= fun keys ->
+  let children = setify (List.map (fun key -> List.hd (remove_prefix path key)) keys) in
+  return children
+
 open Db_cache_types
 open Db_exn
 
@@ -55,7 +70,8 @@ let is_valid_ref dbref rf = match get_table_from_ref dbref rf with
   | None -> false
   | Some _ -> true
 
-let read_refs dbref tbl = []
+let read_refs dbref tbl =
+  Lwt_main.run (ls [ Path._xapi; tbl ])
 
 let find_refs_with_filter dbref tbl expr = []
 
