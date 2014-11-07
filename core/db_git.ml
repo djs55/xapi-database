@@ -34,19 +34,14 @@ module Path = struct
   let ref_to_table rf = [ _xapi; _ref_to_table; rf ]
 end
 
-let rec mkints first last =
-  if first > last then []
-  else first :: (mkints (first + 1) last)
-
-let marshal_set k v =
-  let ks = String_unmarshall_helper.set (fun x -> x) v in
-  let is = mkints 1 (List.length ks) in
-  List.map (fun (i, k') -> k @ [ string_of_int i ], k') (List.combine is ks)
-
 let marshal_pairs k v =
   let pairs = String_unmarshall_helper.map (fun x -> x) (fun x -> x) v in
   List.map (fun (k', v) -> k @ [ k' ], v) pairs
 
+let marshal_set k v =
+  let set = String_unmarshall_helper.set (fun x -> x) v in
+  List.map (fun k' -> k @ [ "_" ^ k' ], "1") set
+       
 module To = struct
   let file (path: string) db : unit Lwt.t =
     let module Git = IrminGit.FS(struct
@@ -271,6 +266,21 @@ module Impl = struct
     let preamble = [ Path.ref_to_table rf, tbl ] in
     Lwt_main.run (Lwt_list.iter_s (fun (k, v) -> write k v) (to_write @ preamble))
 
-  let process_structured_field dbref kv tbl fld rf op = ()
+  let process_structured_field dbref (key,value) tbl fld rf op =
+    (* Ensure that both keys and values are valid for UTF-8-encoded XML. *)
+    let open String_marshall_helper in
+    let key = ensure_utf8_xml key in
+    let value = ensure_utf8_xml value in
+    let t = match op with
+    | AddMap ->
+      begin
+        read (Path.set tbl rf fld key)
+        >>= function
+        | Some _ -> fail (Duplicate_key (tbl,fld,rf,key))
+        | None -> write (Path.set tbl rf fld key) value
+      end
+    | AddSet -> write (Path.set tbl rf fld key) "1"
+    | RemoveMap -> rm (Path.set tbl rf fld key)
+    | RemoveSet -> rm (Path.set tbl rf fld ("_" ^ key)) in
+    Lwt_main.run t
 end
-
