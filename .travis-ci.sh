@@ -24,4 +24,6 @@ opam --git-version
 
 opam init 
 eval `opam config -env`
+opam pin add xen-api-client git://github.com/djs55/xen-api-client#improvements
 opam pin add test-package . -y
+make test
