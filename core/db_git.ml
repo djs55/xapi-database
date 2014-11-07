@@ -5,7 +5,7 @@ module To = struct
   let file (path: string) db : unit Lwt.t =
     let module Git = IrminGit.FS(struct
       let root = Some path
-      let bare = false
+      let bare = true
     end) in
     let module Store = Git.Make(IrminKey.SHA1)(IrminContents.String)(IrminTag.String) in
     Store.create () >>=
