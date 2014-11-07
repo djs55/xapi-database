@@ -182,9 +182,12 @@ module Impl = struct
   let write_field dbref tbl rf fld v =
     Lwt_main.run (write (Path.field tbl rf fld) v)
 
-  let create_row dbref tbl kvpairs rf = ()
+  let read_field dbref tbl rf fld =
+    match Lwt_main.run (read (Path.field tbl rf fld)) with
+    | None -> raise (DBCache_NotFound(tbl,rf,fld))
+    | Some x -> x
 
-  let read_field dbref tbl rf fld = failwith "unimplemented"
+  let create_row dbref tbl kvpairs rf = ()
 
   let read_record dbref tbl rf = failwith "unimplemented"
 
