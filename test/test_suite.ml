@@ -17,6 +17,6 @@ let base_suite =
       Test_read.test;
     ]
 
-let () =
+let _ =
   setup ();
-  ounit2_of_ounit1 base_suite |> OUnit2.run_test_tt_main
+  run_test_tt ~verbose:false base_suite
