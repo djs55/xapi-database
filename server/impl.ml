@@ -17,6 +17,8 @@ module Path = struct
 
   let _xapi = "xapi"
 
+  let _ref_to_table = "tables"
+
   let root = [ _xapi ]
 
   let table tbl =  [ _xapi; tbl ]
@@ -27,20 +29,31 @@ end
 
 open Irmin_unix
 module Git = IrminGit.FS(struct
-  let root = Some "/tmp/db.git"
+  let root = Some "/tmp/db"
   let bare = true
 end)
 
-module DB = Git.Make(IrminKey.SHA1)(IrminContents.String)(IrminTag.String)
+module Store = Git.Make(IrminKey.SHA1)(IrminContents.String)(IrminTag.String)
+
+let store_t = Store.create ()
+
+open Lwt
+
+let read path =
+  store_t >>= fun store ->
+  Store.read store path
 
 open Db_cache_types
 open Db_exn
 
 let initialise () = ()
 
-let get_table_from_ref dbref rf = None
+let get_table_from_ref dbref rf =
+  Lwt_main.run (read [ Path._xapi; Path._ref_to_table; rf ])
 	
-let is_valid_ref dbref rf = false
+let is_valid_ref dbref rf = match get_table_from_ref dbref rf with
+  | None -> false
+  | Some _ -> true
 
 let read_refs dbref tbl = []
 
