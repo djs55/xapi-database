@@ -73,7 +73,20 @@ let is_valid_ref dbref rf = match get_table_from_ref dbref rf with
 let read_refs dbref tbl =
   Lwt_main.run (ls [ Path._xapi; tbl ])
 
-let find_refs_with_filter dbref tbl expr = []
+let find_refs_with_filter dbref tbl expr =
+  let eval_row rf = function
+  | Db_filter_types.Literal x -> x
+  | Db_filter_types.Field x ->
+    begin match Lwt_main.run (read (Path.field tbl rf x)) with
+    | Some x -> x
+    | None -> failwith ("Couldn't find field " ^ x)
+    end in
+  let rfs = read_refs dbref tbl in
+  List.fold_left (fun acc rf ->
+    if Db_filter.eval_expr (eval_row rf) expr
+    then rf :: acc
+    else acc
+  ) rfs []
 
 let read_field_where dbref where =
   let rfs = read_refs dbref where.table in
