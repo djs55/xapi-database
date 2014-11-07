@@ -29,6 +29,7 @@ module Path = struct
   let table tbl =  [ _xapi; tbl ]
   let obj tbl rf = [ _xapi; tbl; rf ]
   let field tbl rf field = [ _xapi; tbl; rf; field ]
+  let set tbl rf field key = [ _xapi; tbl; rf; field; key ]
 
   let ref_to_table rf = [ _xapi; _ref_to_table; rf ]
 end
@@ -83,6 +84,10 @@ module To = struct
       )
 end
 
+let schema =
+  let sexp = Sexplib.Sexp.load_sexp "db.schema" in
+  Schema.t_of_sexp sexp
+
 module Git = IrminGit.FS(struct
   let root = Some "/tmp/db"
   let bare = true
@@ -119,6 +124,25 @@ let rm path =
   store_t >>= fun store ->
   Store.list store [ path ] >>= fun keys ->
   Lwt_list.iter_s (Store.remove store) keys
+
+let filter_none xs = List.fold_left (fun acc x -> match x with None -> acc | Some x -> x :: acc) [] xs
+
+let read_set dbref tbl rf fld =
+  ls (Path.field tbl rf fld)
+  >>= fun keys ->
+  Lwt_list.map_s (fun key -> read(Path.set tbl rf fld key)) keys
+  >>= fun values ->
+  return (filter_none values)
+
+let read_map dbref tbl rf fld =
+  ls (Path.field tbl rf fld)
+  >>= fun keys ->
+  Lwt_list.map_s (fun key ->
+    read (Path.set tbl rf fld key)
+    >>= function
+    | None -> return (key, "")
+    | Some v -> return (key, v)
+  ) keys
 
 open Db_cache_types
 open Db_exn
@@ -187,11 +211,48 @@ module Impl = struct
     | None -> raise (DBCache_NotFound(tbl,rf,fld))
     | Some x -> x
 
-  let create_row dbref tbl kvpairs rf = ()
+  let read_record dbref tbl rf =
+    let t =
+      ls (Path.obj tbl rf)
+      >>= fun fields ->
+      let schema = Schema.Database.find tbl schema.Schema.database in
+      let set_ref = List.filter (fun field -> Schema.((Table.find field schema).Column.issetref)) fields in
+      let sets = List.filter (fun field -> Schema.((Table.find field schema).Column.ty = Type.Set)) fields in
+      let maps = List.filter (fun field -> Schema.((Table.find field schema).Column.ty = Type.Pairs)) fields in
+      let strings = List.filter (fun field -> Schema.((Table.find field schema).Column.ty = Type.String)) fields in
+      Lwt_list.map_s (fun field ->
+        read (Path.field tbl rf field)
+        >>= function
+        | None -> return (field, "")
+        | Some x -> return (field, x)
+      ) strings
+      >>= fun strings ->
+      (* return sets and maps as s-expressions *)
+      Lwt_list.map_s (fun field -> 
+        read_set dbref tbl rf field
+        >>= fun values ->
+        return (field, String_marshall_helper.set (fun x -> x) values)
+      ) sets
+      >>= fun sets ->
+      Lwt_list.map_s (fun field ->
+        read_map dbref tbl rf field
+        >>= fun values ->
+        return (field, String_marshall_helper.map (fun x -> x) (fun x -> x) values)
+      ) maps
+      >>= fun maps ->
+      Lwt_list.map_s (fun field ->
+        read_set dbref tbl rf field
+        >>= fun values ->
+        return (field, values)
+      ) set_ref
+      >>= fun set_ref ->
+      return (strings @ sets @ maps, set_ref) in
+    Lwt_main.run t
 
-  let read_record dbref tbl rf = failwith "unimplemented"
+  let create_row dbref tbl kvpairs rf = ()
 
   let read_records_where dbref tbl expr = []
 
   let process_structured_field dbref kv tbl fld rf op = ()
 end
+
