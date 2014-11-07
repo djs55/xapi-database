@@ -30,3 +30,9 @@ Executable dbconvert
   Path: utils
   MainIs: dbconvert.ml
   BuildDepends: xapi-database
+
+Executable test_suite
+  CompiledObject: best
+  Path: test
+  MainIs: test_suite.ml
+  BuildDepends: xapi-database, oUnit
