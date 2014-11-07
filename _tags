@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: f6652c1f7b6765a9458953cf687d4c33)
+# DO NOT EDIT (digest: f0a35001ec7e08a50ef643a6c91e9ad7)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -114,4 +114,27 @@ true: annot, bin_annot
 <utils/*.ml{,i,y}>: pkg_threads
 <utils/*.ml{,i,y}>: pkg_xcp
 <utils/*.ml{,i,y}>: use_xapi-database
+# Executable test_suite
+<test/test_suite.{native,byte}>: pkg_http-svr
+<test/test_suite.{native,byte}>: pkg_irmin.unix
+<test/test_suite.{native,byte}>: pkg_oUnit
+<test/test_suite.{native,byte}>: pkg_rpclib
+<test/test_suite.{native,byte}>: pkg_rpclib.syntax
+<test/test_suite.{native,byte}>: pkg_sexplib
+<test/test_suite.{native,byte}>: pkg_sexplib.syntax
+<test/test_suite.{native,byte}>: pkg_sexpr
+<test/test_suite.{native,byte}>: pkg_threads
+<test/test_suite.{native,byte}>: pkg_xcp
+<test/test_suite.{native,byte}>: use_xapi-database
+<test/*.ml{,i,y}>: pkg_http-svr
+<test/*.ml{,i,y}>: pkg_irmin.unix
+<test/*.ml{,i,y}>: pkg_oUnit
+<test/*.ml{,i,y}>: pkg_rpclib
+<test/*.ml{,i,y}>: pkg_rpclib.syntax
+<test/*.ml{,i,y}>: pkg_sexplib
+<test/*.ml{,i,y}>: pkg_sexplib.syntax
+<test/*.ml{,i,y}>: pkg_sexpr
+<test/*.ml{,i,y}>: pkg_threads
+<test/*.ml{,i,y}>: pkg_xcp
+<test/*.ml{,i,y}>: use_xapi-database
 # OASIS_STOP

@@ -58,6 +58,6 @@ module Make(S: SERVER) = struct
 end
 
 let _ =
-  let module M = Make(Db_remote_cache_access_v1.Make(Impl)) in
+  let module M = Make(Db_remote_cache_access_v1.Make(Db_git.Impl)) in
 
   Lwt_main.run (M.serve ())
