@@ -23,7 +23,7 @@ module Path = struct
 
   let table tbl =  [ _xapi; tbl ]
   let obj tbl rf = [ _xapi; tbl; rf ]
-  let field obj tbl rf field = [ _xapi; tbl; rf; field ]
+  let field tbl rf field = [ _xapi; tbl; rf; field ]
 
 end
 
@@ -75,7 +75,16 @@ let read_refs dbref tbl =
 
 let find_refs_with_filter dbref tbl expr = []
 
-let read_field_where dbref where = []
+let read_field_where dbref where =
+  let rfs = read_refs dbref where.table in
+  List.fold_left (fun acc rf ->
+    match Lwt_main.run (read (Path.field where.table rf where.where_field)) with
+    | Some v when v = where.where_value ->
+      begin match Lwt_main.run (read (Path.field where.table rf where.return)) with
+      | Some w -> w :: acc
+      | None -> acc
+      end
+    | _ -> acc) [] rfs
 
 let db_get_by_uuid dbref tbl uuid_val =
   let where = { table=tbl; return=Db_names.ref; where_field=Db_names.uuid; where_value=uuid_val } in
