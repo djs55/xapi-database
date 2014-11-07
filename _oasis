@@ -32,7 +32,11 @@ Executable dbconvert
   BuildDepends: xapi-database
 
 Executable test_suite
+  Build$: flag(tests)
   CompiledObject: best
   Path: test
   MainIs: test_suite.ml
   BuildDepends: xapi-database, oUnit
+
+Test test_suite
+  Command: $test_suite
