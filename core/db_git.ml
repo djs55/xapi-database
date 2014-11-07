@@ -38,6 +38,15 @@ let rec mkints first last =
   if first > last then []
   else first :: (mkints (first + 1) last)
 
+let marshal_set k v =
+  let ks = String_unmarshall_helper.set (fun x -> x) v in
+  let is = mkints 1 (List.length ks) in
+  List.map (fun (i, k') -> k @ [ string_of_int i ], k') (List.combine is ks)
+
+let marshal_pairs k v =
+  let pairs = String_unmarshall_helper.map (fun x -> x) (fun x -> x) v in
+  List.map (fun (k', v) -> k @ [ k' ], v) pairs
+
 module To = struct
   let file (path: string) db : unit Lwt.t =
     let module Git = IrminGit.FS(struct
@@ -63,13 +72,8 @@ module To = struct
               let ty = try (Schema.Table.find k schema_table).Schema.Column.ty with _ -> Schema.Type.String in
               match ty with
               | Schema.Type.String -> ([k], Xml_spaces.protect v) :: acc
-              | Schema.Type.Set ->
-                let ks = String_unmarshall_helper.set (fun x -> x) v in
-                let is = mkints 1 (List.length ks) in
-                List.map (fun (i, k') -> [ k; string_of_int i ], k') (List.combine is ks) @ acc
-              | Schema.Type.Pairs ->
-                let pairs = String_unmarshall_helper.map (fun x -> x) (fun x -> x) v in
-                List.map (fun (k', v) -> [ k; k' ], v) pairs @ acc
+              | Schema.Type.Set -> marshal_set [k] v @ acc
+              | Schema.Type.Pairs -> marshal_pairs [k] v @ acc
             ) row preamble in
             List.map (fun (k, v) -> Path._xapi :: name :: rf :: k, v) pairs @ index @ acc in
           Table.fold record tbl [] @ acc in
@@ -253,7 +257,19 @@ module Impl = struct
     let reqd_refs = find_refs_with_filter dbref tbl expr in
     List.map (fun ref->ref, read_record dbref tbl ref) reqd_refs
 
-  let create_row dbref tbl kvpairs rf = ()
+  let create_row dbref tbl kvpairs rf =
+    let schema = Schema.Database.find tbl schema.Schema.database in
+    let set_ref = List.filter (fun (field,_) -> Schema.((Table.find field schema).Column.issetref)) kvpairs in
+    let to_write = List.concat (List.map (fun (k, v) ->
+      let open Schema in
+      let path = Path.field tbl rf k in
+      match (Table.find k schema).Column.ty with
+      | Type.String -> [ path, v ]
+      | Type.Set -> marshal_set path v
+      | Type.Pairs -> marshal_pairs path v
+    ) kvpairs) in
+    let preamble = [ Path.ref_to_table rf, tbl ] in
+    Lwt_main.run (Lwt_list.iter_s (fun (k, v) -> write k v) (to_write @ preamble))
 
   let process_structured_field dbref kv tbl fld rf op = ()
 end
