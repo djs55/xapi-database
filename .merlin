@@ -1,0 +1,11 @@
+PKG threads rpclib.syntax sexplib.syntax xcp sexpr http-svr irmin.unix uri lwt.unix xen-api-client.lwt git cohttp.lwt
+
+S cli
+S core
+S server
+S utils
+
+B _build/cli
+B _build/core
+B _build/server
+B _build/utils
