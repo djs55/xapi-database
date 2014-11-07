@@ -38,5 +38,12 @@ Executable test_suite
   MainIs: test_suite.ml
   BuildDepends: xapi-database, oUnit
 
+Executable database_test
+  Build$: flag(tests)
+  CompiledObject: best
+  Path: test
+  MainIs: database_test_main.ml
+  BuildDepends: xapi-database
+
 Test test_suite
   Command: $test_suite
