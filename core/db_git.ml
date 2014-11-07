@@ -249,9 +249,11 @@ module Impl = struct
       return (strings @ sets @ maps, set_ref) in
     Lwt_main.run t
 
-  let create_row dbref tbl kvpairs rf = ()
+  let read_records_where dbref tbl expr =
+    let reqd_refs = find_refs_with_filter dbref tbl expr in
+    List.map (fun ref->ref, read_record dbref tbl ref) reqd_refs
 
-  let read_records_where dbref tbl expr = []
+  let create_row dbref tbl kvpairs rf = ()
 
   let process_structured_field dbref kv tbl fld rf op = ()
 end
