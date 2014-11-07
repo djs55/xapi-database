@@ -33,6 +33,8 @@ end)
 
 module DB = Git.Make(IrminKey.SHA1)(IrminContents.String)(IrminTag.String)
 
+open Db_cache_types
+open Db_exn
 
 let initialise () = ()
 
@@ -46,9 +48,16 @@ let find_refs_with_filter dbref tbl expr = []
 
 let read_field_where dbref where = []
 
-let db_get_by_uuid dbref rbl uuid = failwith "unimplemented"
+let db_get_by_uuid dbref tbl uuid_val =
+  let where = { table=tbl; return=Db_names.ref; where_field=Db_names.uuid; where_value=uuid_val } in
+  match read_field_where dbref where with
+  | [] -> raise (Read_missing_uuid (tbl, "", uuid_val))
+  | [r] -> r
+  | _ -> raise (Too_many_values (tbl, "", uuid_val))
 
-let db_get_by_name_label dbref tbl name_label = failwith "unimplemented"
+let db_get_by_name_label dbref tbl label =
+  let where = { table=tbl; return=Db_names.ref; where_field=(Escaping.escape_id ["name"; "label"]); where_value = label } in
+  read_field_where dbref where
 
 let read_set_ref dbref where = []
 
