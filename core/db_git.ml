@@ -152,6 +152,8 @@ module Impl = struct
         end
       | _ -> acc) [] rfs
 
+  let read_set_ref = read_field_where
+
   let db_get_by_uuid dbref tbl uuid_val =
     let where = { table=tbl; return=Db_names.ref; where_field=Db_names.uuid; where_value=uuid_val } in
     match read_field_where dbref where with
@@ -162,8 +164,6 @@ module Impl = struct
   let db_get_by_name_label dbref tbl label =
     let where = { table=tbl; return=Db_names.ref; where_field=(Escaping.escape_id ["name"; "label"]); where_value = label } in
     read_field_where dbref where
-
-  let read_set_ref dbref where = []
 
   let create_row dbref tbl kvpairs rf = ()
 
