@@ -2,6 +2,10 @@ open Lwt
 open Irmin_unix
 open Db_cache_types
 
+let _xapi = "xapi"
+
+let _ref_to_table = "tables"
+
 let rec mkints first last =
   if first > last then []
   else first :: (mkints (first + 1) last)
@@ -26,6 +30,7 @@ module To = struct
           let record rf ctime mtime (row: Row.t) acc =
             let preamble =
               [(["__mtime"],Int64.to_string mtime); (["__ctime"],Int64.to_string ctime); (["ref"],rf)] in
+            let index = [ [ _xapi; _ref_to_table; rf ], name ] in
             let pairs = Row.fold (fun k _ _ v acc ->
               let ty = try (Schema.Table.find k schema_table).Schema.Column.ty with _ -> Schema.Type.String in
               match ty with
@@ -38,7 +43,7 @@ module To = struct
                 let pairs = String_unmarshall_helper.map (fun x -> x) (fun x -> x) v in
                 List.map (fun (k', v) -> [ k; k' ], v) pairs @ acc
             ) row preamble in
-            List.map (fun (k, v) -> "xapi" :: name :: rf :: k, v) pairs @ acc in
+            List.map (fun (k, v) -> _xapi :: name :: rf :: k, v) pairs @ index @ acc in
           Table.fold record tbl [] @ acc in
         let pairs = TableSet.fold table (Database.tableset db) [] in
         Lwt_list.iter_s (fun (k, v) -> Store.View.update view k v) pairs
