@@ -96,6 +96,10 @@ let read path =
   store_t >>= fun store ->
   Store.read store path
 
+let write path v =
+  store_t >>= fun store ->
+  Store.update store path v
+
 let rec remove_prefix prefix path = match prefix, path with
 | [], path -> path
 | p :: ps, q :: qs when p = q -> remove_prefix ps qs
@@ -175,9 +179,10 @@ module Impl = struct
     Lwt_main.run (rm (Path.obj tbl rf));
     Lwt_main.run (rm (Path.ref_to_table rf))
 
-  let create_row dbref tbl kvpairs rf = ()
+  let write_field dbref tbl rf fld v =
+    Lwt_main.run (write (Path.field tbl rf fld) v)
 
-  let write_field dbref tbl rf fld v = ()
+  let create_row dbref tbl kvpairs rf = ()
 
   let read_field dbref tbl rf fld = failwith "unimplemented"
 
