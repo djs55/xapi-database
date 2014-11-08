@@ -83,5 +83,19 @@ module Make(DBCache: Db_interface.DB_ACCESS) = struct
 			| Too_many_values (s1,s2,s3) ->
 				failure "too_many_values" (marshall_3strings (s1,s2,s3))
 			| e -> raise e
-	let rpc x = Xml.to_string (xmlrpc (Xml.parse_string x))
+	let rpc x =
+          let output =
+            try
+              let input = Xml.parse_string x in
+              (try
+                xmlrpc input
+              with e ->
+                Printf.fprintf stderr "Caught %s\n%!" (Printexc.to_string e);
+                Printexc.print_backtrace stderr;
+                failure "Uncaught exception" (marshall_3strings(Printexc.to_string e, Printexc.get_backtrace (), ""))
+              )
+            with e ->
+              Printf.fprintf stderr "Failed to parse input: '%s'\n%!" x;
+              failure "Parse failure" (marshall_3strings(Printexc.to_string e, Printexc.get_backtrace (), "")) in
+          Xml.to_string output
 end
