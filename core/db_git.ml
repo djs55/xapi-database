@@ -237,13 +237,12 @@ module Impl = struct
       with Not_found ->
         failwith (Printf.sprintf "Failed to find table name '%s' in schema" tbl) in
     let t =
-      ls (Path.obj tbl rf)
-      >>= fun fields ->
-      let set_ref = List.filter (fun field -> try Schema.((Table.find field schema).Column.issetref) with Not_found -> false) fields in
-      let sets = List.filter (fun field -> try Schema.((Table.find field schema).Column.ty = Type.Set) with Not_found -> false) fields in
-      let maps = List.filter (fun field -> try Schema.((Table.find field schema).Column.ty = Type.Pairs) with Not_found -> false) fields in
-      let strings = List.filter (fun field -> try Schema.((Table.find field schema).Column.ty = Type.String) with Not_found -> false) fields in
-      Lwt_list.map_s (fun field ->
+      let columns = schema.Schema.Table.columns in
+      let set_ref = List.filter (fun c -> c.Schema.Column.issetref) columns in
+      let sets = List.filter (fun c -> Schema.(c.Column.ty = Type.Set)) columns in
+      let maps = List.filter (fun c -> Schema.(c.Column.ty = Type.Pairs)) columns in
+      let strings = List.filter (fun c -> Schema.(c.Column.ty = Type.String)) columns in
+      Lwt_list.map_s (fun { Schema.Column.name = field } ->
         read (Path.field tbl rf field)
         >>= function
         | None -> return (field, "")
@@ -251,19 +250,19 @@ module Impl = struct
       ) strings
       >>= fun strings ->
       (* return sets and maps as s-expressions *)
-      Lwt_list.map_s (fun field -> 
+      Lwt_list.map_s (fun { Schema.Column.name = field  } -> 
         read_set dbref tbl rf field
         >>= fun values ->
         return (field, String_marshall_helper.set (fun x -> x) values)
       ) sets
       >>= fun sets ->
-      Lwt_list.map_s (fun field ->
+      Lwt_list.map_s (fun { Schema.Column.name = field } ->
         read_map dbref tbl rf field
         >>= fun values ->
         return (field, String_marshall_helper.map (fun x -> x) (fun x -> x) values)
       ) maps
       >>= fun maps ->
-      Lwt_list.map_s (fun field ->
+      Lwt_list.map_s (fun { Schema.Column.name = field } ->
         read_set dbref tbl rf field
         >>= fun values ->
         return (field, values)
