@@ -129,9 +129,9 @@ let filter_none xs = List.fold_left (fun acc x -> match x with None -> acc | Som
 let read_set dbref tbl rf fld =
   ls (Path.field tbl rf fld)
   >>= fun keys ->
-  Lwt_list.map_s (fun key -> read(Path.set tbl rf fld key)) keys
-  >>= fun values ->
-  return (filter_none values)
+  (* XXX: remove a _ prefix *)
+  let keys = List.map (fun x -> if x <> "" && x.[0] = '_' then String.sub x 1 (String.length x - 1) else x) keys in
+  return keys
 
 let read_map dbref tbl rf fld =
   ls (Path.field tbl rf fld)
@@ -206,9 +206,29 @@ module Impl = struct
     Lwt_main.run (write (Path.field tbl rf fld) v)
 
   let read_field dbref tbl fld rf =
-    match Lwt_main.run (read (Path.field tbl rf fld)) with
-    | None -> raise (DBCache_NotFound(tbl,rf,fld))
-    | Some x -> x
+    let schema_table = Schema.Database.find tbl schema.Schema.database in
+    let schema_column = Schema.Table.find fld schema_table in
+    let t = match schema_column.Schema.Column.ty with
+    | Schema.Type.String ->
+      begin
+        read (Path.field tbl rf fld)
+        >>= function
+        | None -> fail (DBCache_NotFound(tbl,rf,fld))
+        | Some x -> return x
+      end
+    | Schema.Type.Set ->
+      begin
+        read_set dbref tbl rf fld
+        >>= fun values ->
+        return (String_marshall_helper.set (fun x -> x) values)
+      end
+    | Schema.Type.Pairs ->
+      begin
+        read_map dbref tbl rf fld
+        >>= fun values ->
+        return (String_marshall_helper.map (fun x -> x) (fun x -> x) values)
+      end in
+    Lwt_main.run t
 
   let read_record dbref tbl rf =
     let schema =
