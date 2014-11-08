@@ -123,6 +123,8 @@ let rm path =
   store_t >>= fun store ->
   Store.list store [ path ] >>= fun keys ->
   Lwt_list.iter_s (Store.remove store) keys
+  >>= fun () ->
+  Store.remove store path
 
 let filter_none xs = List.fold_left (fun acc x -> match x with None -> acc | Some x -> x :: acc) [] xs
 
