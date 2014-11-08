@@ -45,9 +45,11 @@ module Make(S: SERVER) = struct
         end in
     loop ()
 
-  let serve () =
+  let serve path =
+    Lwt_unix.unlink path
+    >>= fun () ->
     let s = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
-    Lwt_unix.bind s (Lwt_unix.ADDR_UNIX "/tmp/foo");
+    Lwt_unix.bind s (Lwt_unix.ADDR_UNIX path);
     Lwt_unix.listen s 5;
     let rec loop () =
       Lwt_unix.accept s
@@ -60,4 +62,4 @@ end
 let _ =
   let module M = Make(Db_remote_cache_access_v1.Make(Db_git.Impl)) in
 
-  Lwt_main.run (M.serve ())
+  Lwt_main.run (M.serve "/tmp/foo")
