@@ -17,5 +17,7 @@ let () =
     Db_xml.To.file db_path db
   | [|_; "convert"; db_path; git_path|] ->
     let db = Db_xml.From.file (load_schema ()) db_path in
+    (* create the 'relationship' fields *)
+    let db = Database.reindex db in
     Lwt_main.run (Db_git.To.file git_path db)
   | _ -> usage ()
