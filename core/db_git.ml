@@ -211,14 +211,18 @@ module Impl = struct
     | Some x -> x
 
   let read_record dbref tbl rf =
+    let schema =
+      try
+        Schema.Database.find tbl schema.Schema.database
+      with Not_found ->
+        failwith (Printf.sprintf "Failed to find table name '%s' in schema" tbl) in
     let t =
       ls (Path.obj tbl rf)
       >>= fun fields ->
-      let schema = Schema.Database.find tbl schema.Schema.database in
-      let set_ref = List.filter (fun field -> Schema.((Table.find field schema).Column.issetref)) fields in
-      let sets = List.filter (fun field -> Schema.((Table.find field schema).Column.ty = Type.Set)) fields in
-      let maps = List.filter (fun field -> Schema.((Table.find field schema).Column.ty = Type.Pairs)) fields in
-      let strings = List.filter (fun field -> Schema.((Table.find field schema).Column.ty = Type.String)) fields in
+      let set_ref = List.filter (fun field -> try Schema.((Table.find field schema).Column.issetref) with Not_found -> false) fields in
+      let sets = List.filter (fun field -> try Schema.((Table.find field schema).Column.ty = Type.Set) with Not_found -> false) fields in
+      let maps = List.filter (fun field -> try Schema.((Table.find field schema).Column.ty = Type.Pairs) with Not_found -> false) fields in
+      let strings = List.filter (fun field -> try Schema.((Table.find field schema).Column.ty = Type.String) with Not_found -> false) fields in
       Lwt_list.map_s (fun field ->
         read (Path.field tbl rf field)
         >>= function
