@@ -38,12 +38,20 @@ module Make(S: SERVER) = struct
               ~version:`HTTP_1_1 ~status:`OK ~headers
               ~encoding:(Cohttp.Transfer.Fixed content_length) () in
             Response.write (fun t oc -> Response.write_body t oc response_txt) response oc
-            >>= fun () ->
-            loop ()
           end
         | _, _ -> fail (Failure "Unknown method")
-        end in
-    loop ()
+        end
+        >>= fun () ->
+        loop () in
+    Lwt.catch loop
+      (fun e ->
+        Printf.fprintf stderr "* Caught %s\n%!" (Printexc.to_string e);
+        Lwt_io.close ic
+        >>= fun () ->
+        Lwt_io.close oc
+        >>= fun () ->
+        fail e)
+
 
   let serve path =
     Lwt_unix.unlink path
