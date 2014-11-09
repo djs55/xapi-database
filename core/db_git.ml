@@ -286,7 +286,7 @@ module Impl = struct
       Lwt_list.map_s (fun { Schema.Column.name = field } ->
         read dbref (Path.field tbl rf field)
         >>= function
-        | None -> return (field, "")
+        | None -> fail (DBCache_NotFound(tbl,rf,field))
         | Some x -> return (field, x)
       ) strings
       >>= fun strings ->
