@@ -1,7 +1,7 @@
 open Lwt
 
 module type SERVER = sig
-  val rpc: string -> string
+  val rpc: string option -> string -> string
 end
 
 
@@ -28,7 +28,10 @@ module Make(S: SERVER) = struct
             let body = String.create content_length in
             Lwt_io.read_into_exactly ic body 0 content_length
             >>= fun () ->
-            let response_txt = S.rpc body in
+            let subtask_of = Cohttp.Header.get headers "subtask-of" in
+            Printf.fprintf stderr "<- [%s] %s\n%!" (match subtask_of with None -> "None" | Some x -> x) body;
+            let response_txt = S.rpc subtask_of body in
+            Printf.fprintf stderr "-> %s\n%!" response_txt;
             let content_length = String.length response_txt in
             let headers = Cohttp.Header.of_list [
               "user-agent", "xapi-database";

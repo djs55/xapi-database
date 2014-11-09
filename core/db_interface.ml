@@ -11,7 +11,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *)
-open Sexplib.Std
 
 type response =
 	| String of string
@@ -29,14 +28,17 @@ end
 
 (** dictionary of regular fields x dictionary of associated set_ref values *)
 type db_record = (string * string) list * (string * (string list)) list 
-with sexp
 
 (** The client interface to the database *)
 module type DB_ACCESS = sig
 	(** [initialise ()] must be called before any other function in this 
 		interface *)
 	val initialise : unit -> unit
-		
+
+        (** [merge title description] signals that the current task is completed
+            and the changes should be merged. *)
+        val merge: Db_ref.t -> string -> string -> unit
+
 	(** [get_table_from_ref ref] returns [Some tbl] if [ref] is a 
 		valid reference; None otherwise *)
     val get_table_from_ref : Db_ref.t -> string -> string option

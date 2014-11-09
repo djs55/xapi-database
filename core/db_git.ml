@@ -96,13 +96,48 @@ module Store = Git.Make(IrminKey.SHA1)(IrminContents.String)(IrminTag.String)
 
 let store_t = Store.create ()
 
-let read path =
-  store_t >>= fun store ->
-  Store.read store path
+let views = Hashtbl.create 37
+let views_m = Lwt_mutex.create ()
 
-let write path v =
+let view_of_dbref = function
+| Db_ref.In_memory _
+| Db_ref.Remote _ -> assert false
+| Db_ref.Branch name ->
+    Lwt_mutex.with_lock views_m
+      (fun () ->
+        if Hashtbl.mem views name
+        then return (Hashtbl.find views name)
+        else begin
+          store_t >>= fun store ->
+          Store.View.of_path store [] >>= fun v ->
+          Hashtbl.replace views name v;
+          return v
+        end)
+
+let merge dbref title descr =
   store_t >>= fun store ->
-  Store.update store path v
+  view_of_dbref dbref >>= fun v ->
+  let origin = IrminOrigin.create "%s: %s" title descr in
+  Store.View.merge_path ~origin store [] v
+  >>= function
+  | `Ok () -> return ()
+  | `Conflict _ ->
+    begin
+      Store.View.rebase_path ~origin store [] v
+      >>= function
+      | `Ok () -> return ()
+      | `Conflict msg ->
+        Printf.fprintf stderr "FAILED to merge %s %s: %s" title descr msg;
+        fail (Failure "merge")
+    end
+
+let read dbref path =
+  view_of_dbref dbref >>= fun view ->
+  Store.View.read view path
+
+let write dbref path v =
+  view_of_dbref dbref >>= fun view ->
+  Store.View.update view path v
 
 let rec remove_prefix prefix path = match prefix, path with
 | [], path -> path
@@ -113,33 +148,33 @@ let union xs x = if not(List.mem x xs) then x :: xs else xs
 
 let setify xs = List.fold_left union [] xs
 
-let ls (path: string list) : string list Lwt.t =
-  store_t >>= fun store ->
-  Store.list store [ path ] >>= fun keys ->
+let ls dbref (path: string list) : string list Lwt.t =
+  view_of_dbref dbref >>= fun view ->
+  Store.View.list view [ path ] >>= fun keys ->
   let children = setify (List.map (fun key -> List.hd (remove_prefix path key)) keys) in
   return children
 
-let rm path =
-  store_t >>= fun store ->
-  Store.list store [ path ] >>= fun keys ->
-  Lwt_list.iter_s (Store.remove store) keys
+let rm dbref path =
+  view_of_dbref dbref >>= fun view ->
+  Store.View.list view [ path ] >>= fun keys ->
+  Lwt_list.iter_s (Store.View.remove view) keys
   >>= fun () ->
-  Store.remove store path
+  Store.View.remove view path
 
 let filter_none xs = List.fold_left (fun acc x -> match x with None -> acc | Some x -> x :: acc) [] xs
 
 let read_set dbref tbl rf fld =
-  ls (Path.field tbl rf fld)
+  ls dbref (Path.field tbl rf fld)
   >>= fun keys ->
   (* XXX: remove a _ prefix *)
   let keys = List.map (fun x -> if x <> "" && x.[0] = '_' then String.sub x 1 (String.length x - 1) else x) keys in
   return keys
 
 let read_map dbref tbl rf fld =
-  ls (Path.field tbl rf fld)
+  ls dbref (Path.field tbl rf fld)
   >>= fun keys ->
   Lwt_list.map_s (fun key ->
-    read (Path.set tbl rf fld key)
+    read dbref (Path.set tbl rf fld key)
     >>= function
     | None -> return (key, "")
     | Some v -> return (key, v)
@@ -151,21 +186,25 @@ open Db_exn
 module Impl = struct
   let initialise () = ()
 
+  let merge dbref title descr =
+    Lwt_main.run (merge dbref title descr);
+    Printf.fprintf stderr "MERGE %s %s\n%!" title descr
+
   let get_table_from_ref dbref rf =
-    Lwt_main.run (read (Path.ref_to_table rf))
+    Lwt_main.run (read dbref (Path.ref_to_table rf))
 
   let is_valid_ref dbref rf = match get_table_from_ref dbref rf with
     | None -> false
     | Some _ -> true
 
   let read_refs dbref tbl =
-    Lwt_main.run (ls [ Path._xapi; tbl ])
+    Lwt_main.run (ls dbref [ Path._xapi; tbl ])
 
   let find_refs_with_filter dbref tbl expr =
     let eval_row rf = function
     | Db_filter_types.Literal x -> x
     | Db_filter_types.Field x ->
-      begin match Lwt_main.run (read (Path.field tbl rf x)) with
+      begin match Lwt_main.run (read dbref (Path.field tbl rf x)) with
       | Some x -> x
       | None -> failwith ("Couldn't find field " ^ x)
       end in
@@ -179,9 +218,9 @@ module Impl = struct
   let read_field_where dbref where =
     let rfs = read_refs dbref where.table in
     List.fold_left (fun acc rf ->
-      match Lwt_main.run (read (Path.field where.table rf where.where_field)) with
+      match Lwt_main.run (read dbref (Path.field where.table rf where.where_field)) with
       | Some v when v = where.where_value ->
-        begin match Lwt_main.run (read (Path.field where.table rf where.return)) with
+        begin match Lwt_main.run (read dbref (Path.field where.table rf where.return)) with
         | Some w -> w :: acc
         | None -> acc
         end
@@ -201,11 +240,11 @@ module Impl = struct
     read_field_where dbref where
 
   let delete_row dbref tbl rf =
-    Lwt_main.run (rm (Path.obj tbl rf));
-    Lwt_main.run (rm (Path.ref_to_table rf))
+    Lwt_main.run (rm dbref (Path.obj tbl rf));
+    Lwt_main.run (rm dbref (Path.ref_to_table rf))
 
   let write_field dbref tbl rf fld v =
-    Lwt_main.run (write (Path.field tbl rf fld) v)
+    Lwt_main.run (write dbref (Path.field tbl rf fld) v)
 
   let read_field dbref tbl fld rf =
     let schema_table = Schema.Database.find tbl schema.Schema.database in
@@ -213,7 +252,7 @@ module Impl = struct
     let t = match schema_column.Schema.Column.ty with
     | Schema.Type.String ->
       begin
-        read (Path.field tbl rf fld)
+        read dbref (Path.field tbl rf fld)
         >>= function
         | None -> fail (DBCache_NotFound(tbl,rf,fld))
         | Some x -> return x
@@ -245,7 +284,7 @@ module Impl = struct
       let maps = List.filter (fun c -> Schema.(c.Column.ty = Type.Pairs)) columns in
       let strings = List.filter (fun c -> Schema.(c.Column.ty = Type.String)) columns in
       Lwt_list.map_s (fun { Schema.Column.name = field } ->
-        read (Path.field tbl rf field)
+        read dbref (Path.field tbl rf field)
         >>= function
         | None -> return (field, "")
         | Some x -> return (field, x)
@@ -289,7 +328,7 @@ module Impl = struct
       | Type.Pairs -> marshal_pairs path v
     ) kvpairs) in
     let preamble = [ Path.ref_to_table rf, tbl ] in
-    Lwt_main.run (Lwt_list.iter_s (fun (k, v) -> write k v) (to_write @ preamble))
+    Lwt_main.run (Lwt_list.iter_s (fun (k, v) -> write dbref k v) (to_write @ preamble))
 
   let process_structured_field dbref (key,value) tbl fld rf op =
     (* Ensure that both keys and values are valid for UTF-8-encoded XML. *)
@@ -299,13 +338,13 @@ module Impl = struct
     let t = match op with
     | AddMap ->
       begin
-        read (Path.set tbl rf fld key)
+        read dbref (Path.set tbl rf fld key)
         >>= function
         | Some _ -> fail (Duplicate_key (tbl,fld,rf,key))
-        | None -> write (Path.set tbl rf fld key) value
+        | None -> write dbref (Path.set tbl rf fld key) value
       end
-    | AddSet -> write (Path.set tbl rf fld key) "1"
-    | RemoveMap -> rm (Path.set tbl rf fld key)
-    | RemoveSet -> rm (Path.set tbl rf fld ("_" ^ key)) in
+    | AddSet -> write dbref (Path.set tbl rf fld key) "1"
+    | RemoveMap -> rm dbref (Path.set tbl rf fld key)
+    | RemoveSet -> rm dbref (Path.set tbl rf fld ("_" ^ key)) in
     Lwt_main.run t
 end

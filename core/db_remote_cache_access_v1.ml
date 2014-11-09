@@ -16,8 +16,8 @@ let failure exn_name xml =
 
 module Make(DBCache: Db_interface.DB_ACCESS) = struct
 		
-	let xmlrpc xml =
-		let t = Db_ref.Remote in
+	let xmlrpc subtask_of xml =
+		let t = Db_ref.Branch subtask_of in
 		let fn_name, args =
 			match (XMLRPC.From.array (fun x->x) xml) with
 					[fn_name; _; args] ->
@@ -25,9 +25,12 @@ module Make(DBCache: Db_interface.DB_ACCESS) = struct
 				| _ -> raise DBCacheListenerInvalidMessageReceived in
 		try
 			match fn_name with
-					"get_table_from_ref" ->
-						let s = unmarshall_get_table_from_ref_args args in
-						success (marshall_get_table_from_ref_response (DBCache.get_table_from_ref t s))
+                                | "merge" ->
+                                        let (title,descr) = unmarshall_merge_args args in
+                                        success (marshall_merge_response (DBCache.merge t title descr))
+			        | "get_table_from_ref" ->
+					let s = unmarshall_get_table_from_ref_args args in
+					success (marshall_get_table_from_ref_response (DBCache.get_table_from_ref t s))
 				| "is_valid_ref" ->
 					let s = unmarshall_is_valid_ref_args args in
 					success (marshall_is_valid_ref_response (DBCache.is_valid_ref t s))
@@ -83,12 +86,12 @@ module Make(DBCache: Db_interface.DB_ACCESS) = struct
 			| Too_many_values (s1,s2,s3) ->
 				failure "too_many_values" (marshall_3strings (s1,s2,s3))
 			| e -> raise e
-	let rpc x =
+	let rpc subtask_of x =
           let output =
             try
               let input = Xml.parse_string x in
               (try
-                xmlrpc input
+                xmlrpc subtask_of input
               with e ->
                 Printf.fprintf stderr "Caught %s\n%!" (Printexc.to_string e);
                 Printexc.print_backtrace stderr;

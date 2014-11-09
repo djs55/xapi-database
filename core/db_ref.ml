@@ -15,6 +15,7 @@
 type t = 
 	| In_memory of Db_cache_types.Database.t ref ref
 	| Remote
+        | Branch of string option
 
 exception Database_not_in_memory
 
